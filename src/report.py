@@ -20,3 +20,19 @@ def graph_lines(graph: Graph) -> List[str]:
     if graph.excluded:
         lines.append("excluded by filter: " + ", ".join(graph.excluded))
     return lines
+
+
+def reverse_lines(graph: Graph) -> List[str]:
+    """Строки отчёта об обратных зависимостях пакета."""
+    dependents = graph.nodes()[1:]
+    lines = [
+        f"reverse dependencies of {graph.root}: {len(dependents)}",
+        "dependents: " + (", ".join(dependents) or "(none)"),
+    ]
+    for node, parents in graph.edges.items():
+        lines.append(f"{node} <- {', '.join(parents) or '(none)'}")
+    for cycle in graph.cycles:
+        lines.append("cycle: " + " <- ".join(cycle))
+    if graph.excluded:
+        lines.append("excluded by filter: " + ", ".join(graph.excluded))
+    return lines

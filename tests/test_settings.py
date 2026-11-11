@@ -57,7 +57,9 @@ class SettingsTest(unittest.TestCase):
         settings = load_settings(self.write(config_text()))
         keys = [key for key, _ in settings.as_pairs()]
         self.assertEqual(
-            keys, ["package", "repository", "test_mode", "version", "filter"]
+            keys,
+            ["package", "repository", "test_mode", "version", "filter",
+             "reverse"],
         )
 
     def test_scoped_name_and_slash(self) -> None:
@@ -118,3 +120,16 @@ class SettingsTest(unittest.TestCase):
         self.assert_error(config_text(version="4.18"), "like 1.2.3")
         self.assert_error(config_text(filter="a b"), "spaces")
         self.assert_error(config_text(filter="press"), "excludes")
+
+    def test_reverse(self) -> None:
+        """reverse по умолчанию выключен, включается с тестовым файлом."""
+        self.assertFalse(load_settings(self.write(config_text())).reverse)
+        repo = self.write("A: B\n")
+        text = config_text(package="A", repository=repo, test_mode="true")
+        self.assertTrue(load_settings(self.write(text + "reverse,true\n"))
+                        .reverse)
+
+    def test_reverse_errors(self) -> None:
+        """Неверное значение reverse и реестр npm вместо файла."""
+        self.assert_error(config_text() + "reverse,maybe\n", "true or false")
+        self.assert_error(config_text() + "reverse,true\n", "needs test_mode")

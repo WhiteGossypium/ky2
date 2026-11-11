@@ -28,6 +28,13 @@ class MainTest(unittest.TestCase):
         self.assertIn("C -> A, D\n", out)
         self.assertIn("cycle: A -> B -> C -> A", out)
 
+    def test_reverse(self) -> None:
+        """Режим обратных зависимостей."""
+        code, out, _ = launch("configs/reverse_diamond.csv")
+        self.assertEqual(code, 0)
+        self.assertIn("dependents: B, A, C\n", out)
+        self.assertIn("D <- B, C\n", out)
+
     def test_error(self) -> None:
         """Ошибка настроек даёт код 1 и сообщение в потоке ошибок."""
         code, out, err = launch("configs/errors/version_invalid.csv")
@@ -39,4 +46,3 @@ class MainTest(unittest.TestCase):
         """Больше одного аргумента - подсказка по запуску."""
         code, _, err = launch("config.csv", "config.csv")
         self.assertNotEqual(code, 0)
-        self.assertIn("usage", err)

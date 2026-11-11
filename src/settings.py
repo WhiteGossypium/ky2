@@ -1,4 +1,4 @@
-"""Чтение и проверка конфигурации из CSV-файла.
+"""Чтение настроек из конфигурационного файла формата CSV.
 
 Файл состоит из строк "параметр,значение". Первая строка - заголовок
 "parameter,value". Разделитель - запятая или точка с запятой (так
@@ -17,6 +17,8 @@ from src.errors import ToolError
 DEFAULT_CONFIG = "config.csv"
 HEADER = ["parameter", "value"]
 PARAMETERS = ("package", "repository", "test_mode", "version", "filter")
+OPTIONAL = {"reverse": "false"}
+KNOWN = PARAMETERS + tuple(OPTIONAL)
 MAX_NAME_LENGTH = 214
 NPM_NAME = re.compile(
     r"(?:@[a-z0-9~-][a-z0-9._~-]*/)?[a-z0-9~-][a-z0-9._~-]*"
@@ -37,6 +39,7 @@ class Settings:
     test_mode: bool
     version: str
     name_filter: str
+    reverse: bool = False
 
     def as_pairs(self) -> List[Tuple[str, str]]:
         """Возвращает параметры в виде пар ключ-значение."""
@@ -46,6 +49,7 @@ class Settings:
             ("test_mode", str(self.test_mode).lower()),
             ("version", self.version),
             ("filter", self.name_filter),
+            ("reverse", str(self.reverse).lower()),
         ]
 
 
@@ -89,20 +93,31 @@ def collect_values(rows: List[List[str]]) -> Dict[str, str]:
                 f"config line {number}: expected 2 columns, got {len(row)}"
             )
         key = row[0].strip().lower()
-        if key not in PARAMETERS:
+        if key not in KNOWN:
             raise ToolError(f"config line {number}: unknown parameter {key}")
         if key in values:
             raise ToolError(f"config line {number}: {key} is repeated")
         values[key] = row[1].strip()
     check_complete(values)
-    return values
+    return {**OPTIONAL, **values}
 
 
-def check_test_mode(value: str) -> bool:
-    """Проверяет режим тестового репозитория: true или false."""
+def check_switch(key: str, value: str) -> bool:
+    """Проверяет параметр-переключатель: true или false."""
     if value.lower() not in SWITCH:
-        raise ToolError(f"test_mode: expected true or false, got '{value}'")
+        raise ToolError(f"{key}: expected true or false, got '{value}'")
     return SWITCH[value.lower()]
+
+
+def check_reverse(value: str, test_mode: bool) -> bool:
+    """Проверяет режим обратных зависимостей."""
+    reverse = check_switch("reverse", value)
+    if reverse and not test_mode:
+        raise ToolError(
+            "reverse: needs test_mode,true - npm registry has no list "
+            "of dependent packages"
+        )
+    return reverse
 
 
 def check_package(value: str, test_mode: bool) -> str:
@@ -160,7 +175,7 @@ def check_filter(value: str, package: str) -> str:
 def load_settings(path: str) -> Settings:
     """Читает и проверяет все параметры из CSV-файла."""
     values = collect_values(read_rows(path))
-    test_mode = check_test_mode(values["test_mode"])
+    test_mode = check_switch("test_mode", values["test_mode"])
     package = check_package(values["package"], test_mode)
     return Settings(
         package=package,
@@ -168,4 +183,5 @@ def load_settings(path: str) -> Settings:
         test_mode=test_mode,
         version=check_version(values["version"], test_mode),
         name_filter=check_filter(values["filter"], package),
+        reverse=check_reverse(values["reverse"], test_mode),
     )

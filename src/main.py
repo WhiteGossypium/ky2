@@ -7,9 +7,9 @@ from src.errors import ToolError
 from src.file_repository import load_repository
 from src.graph import Graph, build_graph
 from src.npm_registry import NpmRegistry
-from src.report import graph_lines
+from src.report import graph_lines, reverse_lines
 from src.settings import DEFAULT_CONFIG, Settings, load_settings
-from src.sources import FileSource, NpmSource
+from src.sources import FileSource, NpmSource, ReverseFileSource
 
 USAGE = "usage: python -m src.main [config.csv]"
 FAILURE = 1
@@ -19,6 +19,8 @@ MAX_ARGUMENTS = 1
 
 def make_source(settings: Settings) -> Union[FileSource, NpmSource]:
     """Выбирает источник: тестовый репозиторий или реестр npm."""
+    if settings.reverse:
+        return ReverseFileSource(load_repository(settings.repository))
     if settings.test_mode:
         return FileSource(load_repository(settings.repository))
     return NpmSource(NpmRegistry(settings.repository))
@@ -38,12 +40,15 @@ def run(arguments: List[str]) -> int:
         return USAGE_FAILURE
     path = arguments[0] if arguments else DEFAULT_CONFIG
     try:
-        graph = graph_for(load_settings(path))
+        settings = load_settings(path)
+        graph = graph_for(settings)
     except ToolError as error:
         print(f"error: {error}", file=sys.stderr)
         return FAILURE
-    print("\n".join(graph_lines(graph)))
+    lines = reverse_lines(graph) if settings.reverse else graph_lines(graph)
+    print("\n".join(lines))
     return 0
+
 
 def main() -> None:
     """Запускает программу с параметрами командной строки."""

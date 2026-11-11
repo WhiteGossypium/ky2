@@ -1,0 +1,7 @@
+parameter,value
+package,C
+repository,test_repos/cycle.txt
+test_mode,true
+version,
+filter,
+reverse,true
