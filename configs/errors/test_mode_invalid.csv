@@ -1,0 +1,6 @@
+parameter,value
+package,express
+repository,https://registry.npmjs.org
+test_mode,yes
+version,4.18.2
+filter,

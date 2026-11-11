@@ -1,0 +1,6 @@
+parameter,value
+package,a
+repository,test_repos/simple.txt
+test_mode,true
+version,
+filter,
