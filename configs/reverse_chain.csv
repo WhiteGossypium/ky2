@@ -1,7 +1,0 @@
-parameter,value
-package,E
-repository,test_repos/chain.txt
-test_mode,true
-version,
-filter,
-reverse,true

@@ -59,7 +59,7 @@ class SettingsTest(unittest.TestCase):
         self.assertEqual(
             keys,
             ["package", "repository", "test_mode", "version", "filter",
-             "reverse"],
+             "output"],
         )
 
     def test_scoped_name_and_slash(self) -> None:
@@ -121,15 +121,16 @@ class SettingsTest(unittest.TestCase):
         self.assert_error(config_text(filter="a b"), "spaces")
         self.assert_error(config_text(filter="press"), "excludes")
 
-    def test_reverse(self) -> None:
-        """reverse по умолчанию выключен, включается с тестовым файлом."""
-        self.assertFalse(load_settings(self.write(config_text())).reverse)
-        repo = self.write("A: B\n")
-        text = config_text(package="A", repository=repo, test_mode="true")
-        self.assertTrue(load_settings(self.write(text + "reverse,true\n"))
-                        .reverse)
+    def test_output(self) -> None:
+        """Файл диаграммы необязателен: .html или .mmd."""
+        self.assertEqual(load_settings(self.write(config_text())).output, "")
+        text = config_text() + "output,out/graph.HTML\n"
+        self.assertEqual(load_settings(self.write(text)).output,
+                         "out/graph.HTML")
 
-    def test_reverse_errors(self) -> None:
-        """Неверное значение reverse и реестр npm вместо файла."""
-        self.assert_error(config_text() + "reverse,maybe\n", "true or false")
-        self.assert_error(config_text() + "reverse,true\n", "needs test_mode")
+    def test_output_errors(self) -> None:
+        """Неверное расширение и папка вместо файла."""
+        self.assert_error(config_text() + "output,graph.png\n", ".html or")
+        folder = tempfile.mkdtemp(suffix=".mmd")
+        self.addCleanup(shutil.rmtree, folder, ignore_errors=True)
+        self.assert_error(config_text() + f"output,{folder}\n", "folder")

@@ -1,7 +1,7 @@
 parameter,value
-package,C
+package,A
 repository,test_repos/cycle.txt
 test_mode,true
 version,
 filter,
-reverse,true
+output,output/cycle.html

@@ -1,7 +1,0 @@
-parameter,value
-package,A
-repository,test_repos/diamond.txt
-test_mode,true
-version,
-filter,
-reverse,maybe

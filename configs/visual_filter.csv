@@ -1,7 +1,7 @@
 parameter,value
-package,D
+package,A
 repository,test_repos/filter.txt
 test_mode,true
 version,
 filter,XY
-reverse,true
+output,output/filter.mmd

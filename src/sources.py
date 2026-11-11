@@ -72,31 +72,3 @@ class FileSource:
     def node_for(self, name: str, spec: str) -> str:
         """В тестовом репозитории вершина - просто имя пакета."""
         return name
-
-
-def reverse_index(packages: Dict[str, List[str]]) -> Dict[str, List[str]]:
-    """Переворачивает рёбра: пакет -> пакеты, которые от него зависят."""
-    index: Dict[str, List[str]] = {}
-    for parent, children in packages.items():
-        for child in children:
-            index.setdefault(child, []).append(parent)
-    return index
-
-
-class ReverseFileSource(FileSource):
-    """Обратные зависимости: соседи пакета - те, кто от него зависит."""
-
-    def __init__(self, packages: Dict[str, List[str]]) -> None:
-        """Строит перевёрнутый граф тестового репозитория."""
-        super().__init__(packages)
-        self.dependents = reverse_index(packages)
-
-    def root(self, package: str, version: str) -> str:
-        """Пакет должен встречаться в файле хотя бы раз."""
-        if package not in self.packages and package not in self.dependents:
-            raise ToolError(f"package {package} is not in test repository")
-        return package
-
-    def dependencies(self, node: str) -> List[Dependency]:
-        """Пакеты, которые напрямую зависят от данного."""
-        return [(name, name) for name in self.dependents.get(node, [])]

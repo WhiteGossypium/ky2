@@ -17,7 +17,8 @@ from src.errors import ToolError
 DEFAULT_CONFIG = "config.csv"
 HEADER = ["parameter", "value"]
 PARAMETERS = ("package", "repository", "test_mode", "version", "filter")
-OPTIONAL = {"reverse": "false"}
+OPTIONAL = {"output": ""}
+OUTPUT_TYPES = (".html", ".mmd")
 KNOWN = PARAMETERS + tuple(OPTIONAL)
 MAX_NAME_LENGTH = 214
 NPM_NAME = re.compile(
@@ -39,7 +40,7 @@ class Settings:
     test_mode: bool
     version: str
     name_filter: str
-    reverse: bool = False
+    output: str = ""
 
     def as_pairs(self) -> List[Tuple[str, str]]:
         """Возвращает параметры в виде пар ключ-значение."""
@@ -49,7 +50,7 @@ class Settings:
             ("test_mode", str(self.test_mode).lower()),
             ("version", self.version),
             ("filter", self.name_filter),
-            ("reverse", str(self.reverse).lower()),
+            ("output", self.output),
         ]
 
 
@@ -109,15 +110,15 @@ def check_switch(key: str, value: str) -> bool:
     return SWITCH[value.lower()]
 
 
-def check_reverse(value: str, test_mode: bool) -> bool:
-    """Проверяет режим обратных зависимостей."""
-    reverse = check_switch("reverse", value)
-    if reverse and not test_mode:
-        raise ToolError(
-            "reverse: needs test_mode,true - npm registry has no list "
-            "of dependent packages"
-        )
-    return reverse
+def check_output(value: str) -> str:
+    """Проверяет необязательный файл для диаграммы: .html или .mmd."""
+    if not value:
+        return value
+    if os.path.splitext(value)[1].lower() not in OUTPUT_TYPES:
+        raise ToolError(f"output: '{value}' must end with .html or .mmd")
+    if os.path.isdir(value):
+        raise ToolError(f"output: '{value}' is a folder")
+    return value
 
 
 def check_package(value: str, test_mode: bool) -> str:
@@ -183,5 +184,5 @@ def load_settings(path: str) -> Settings:
         test_mode=test_mode,
         version=check_version(values["version"], test_mode),
         name_filter=check_filter(values["filter"], package),
-        reverse=check_reverse(values["reverse"], test_mode),
+        output=check_output(values["output"]),
     )

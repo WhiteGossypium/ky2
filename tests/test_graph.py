@@ -6,7 +6,7 @@ import unittest
 from src.errors import ToolError
 from src.file_repository import load_repository, parse_repository
 from src.graph import build_graph
-from src.sources import FileSource, ReverseFileSource, reverse_index
+from src.sources import FileSource
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LONG_CHAIN = 5000
@@ -16,13 +16,6 @@ def graph_of(name: str, name_filter: str = ""):
     """Строит граф от пакета A по файлу из test_repos."""
     path = os.path.join(ROOT, "test_repos", name + ".txt")
     return build_graph(FileSource(load_repository(path)), "A", name_filter)
-
-
-def reverse_of(name: str, root: str, name_filter: str = ""):
-    """Строит граф обратных зависимостей по файлу из test_repos."""
-    path = os.path.join(ROOT, "test_repos", name + ".txt")
-    source = ReverseFileSource(load_repository(path))
-    return build_graph(source, source.root(root, ""), name_filter)
 
 
 class RepositoryFileTest(unittest.TestCase):
@@ -97,40 +90,3 @@ class GraphTest(unittest.TestCase):
                     for index in range(LONG_CHAIN)}
         with self.assertRaises(ToolError):
             build_graph(FileSource(packages), "P0")
-
-
-class ReverseTest(unittest.TestCase):
-    """Проверяет обратные зависимости тем же обходом."""
-
-    def test_index(self) -> None:
-        """Рёбра переворачиваются."""
-        self.assertEqual(
-            reverse_index({"A": ["B", "C"], "B": ["C"]}),
-            {"B": ["A"], "C": ["A", "B"]},
-        )
-
-    def test_diamond(self) -> None:
-        """От D зависят B и C напрямую и A через них."""
-        graph = reverse_of("diamond", "D")
-        self.assertEqual(graph.nodes(), ["D", "B", "A", "C"])
-        self.assertEqual(graph.edges["D"], ["B", "C"])
-
-    def test_chain_and_root(self) -> None:
-        """Цепочка целиком; от корня никто не зависит."""
-        self.assertEqual(reverse_of("chain", "E").nodes(), list("EDCBA"))
-        self.assertEqual(reverse_of("chain", "A").nodes(), ["A"])
-
-    def test_cycle(self) -> None:
-        """Циклы находятся и в обратном графе."""
-        graph = reverse_of("cycle", "C")
-        self.assertEqual(graph.cycles, [["C", "B", "A", "C"], ["C", "D", "C"]])
-
-    def test_filter_and_undescribed(self) -> None:
-        """Фильтр работает; неописанный пакет можно искать."""
-        self.assertEqual(reverse_of("filter", "D", "XY").nodes(), ["D"])
-        self.assertEqual(reverse_of("undescribed", "C").nodes(), ["C", "A"])
-
-    def test_unknown(self) -> None:
-        """Пакета нет в файле - ошибка."""
-        with self.assertRaises(ToolError):
-            reverse_of("diamond", "Z")

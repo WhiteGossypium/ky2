@@ -1,0 +1,7 @@
+parameter,value
+package,axios
+repository,https://registry.npmjs.org
+test_mode,false
+version,1.6.0
+filter,
+output,output/axios.html

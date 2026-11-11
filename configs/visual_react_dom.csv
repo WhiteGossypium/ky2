@@ -1,0 +1,7 @@
+parameter,value
+package,react-dom
+repository,https://registry.npmjs.org
+test_mode,false
+version,18.2.0
+filter,
+output,output/react-dom.html

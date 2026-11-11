@@ -1,7 +1,0 @@
-parameter,value
-package,C
-repository,test_repos/undescribed.txt
-test_mode,true
-version,
-filter,
-reverse,true

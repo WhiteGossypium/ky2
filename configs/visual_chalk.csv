@@ -1,0 +1,7 @@
+parameter,value
+package,chalk
+repository,https://registry.npmjs.org
+test_mode,false
+version,4.1.2
+filter,
+output,output/chalk.html

@@ -1,7 +1,6 @@
 parameter,value
-package,express
+package,chokidar
 repository,https://registry.npmjs.org
 test_mode,false
-version,4.18.2
+version,3.5.3
 filter,
-reverse,true
