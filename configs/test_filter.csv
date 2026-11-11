@@ -1,0 +1,6 @@
+parameter,value
+package,A
+repository,test_repos/filter.txt
+test_mode,true
+version,
+filter,XY

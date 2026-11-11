@@ -12,10 +12,12 @@ import urllib.request
 from typing import Callable, Dict, List, Tuple
 
 from src.errors import ToolError
+from src.semver import choose_version
 
 ABBREVIATED = "application/vnd.npm.install-v1+json"
 TIMEOUT_SECONDS = 30
 NOT_FOUND = 404
+ALIAS = "npm:"
 
 Fetch = Callable[[str], dict]
 
@@ -58,6 +60,12 @@ def download_document(url: str) -> dict:
     return document
 
 
+def split_alias(text: str) -> Tuple[str, str]:
+    """Разбирает псевдоним имя@диапазон; без диапазона берётся latest."""
+    name, _, spec = text.rpartition("@")
+    return (name, spec) if name else (text, "latest")
+
+
 class NpmRegistry:
     """Реестр npm; скачанные документы запоминаются."""
 
@@ -96,3 +104,20 @@ class NpmRegistry:
         if not isinstance(dependencies, dict):
             raise ToolError(f"{name}@{version}: dependencies is not a map")
         return [(str(key), str(value)) for key, value in dependencies.items()]
+
+    def resolve(self, name: str, spec: str) -> Tuple[str, str]:
+        """Находит версию пакета под диапазон; возвращает имя и версию.
+
+        Запись npm:другое-имя@диапазон означает псевдоним пакета.
+        """
+        if spec.startswith(ALIAS):
+            name, spec = split_alias(spec[len(ALIAS):])
+        if ":" in spec or "/" in spec:
+            raise ToolError(f"{name}: unsupported dependency source {spec}")
+        document = self.document(name)
+        version = choose_version(
+            list(document["versions"]), spec, document.get("dist-tags", {})
+        )
+        if version is None or version not in document["versions"]:
+            raise ToolError(f"{name}: no version matches {spec}")
+        return name, version

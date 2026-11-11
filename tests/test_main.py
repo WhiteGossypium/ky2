@@ -21,11 +21,12 @@ def launch(*arguments: str):
 class MainTest(unittest.TestCase):
     """Проверяет вывод параметров и коды завершения."""
 
-    def test_test_mode_not_ready(self) -> None:
-        """Тестовый репозиторий на этом этапе ещё не поддержан."""
-        code, _, err = launch("configs/test_simple.csv")
-        self.assertEqual(code, 1)
-        self.assertIn("not supported yet", err)
+    def test_graph(self) -> None:
+        """Граф тестового репозитория печатается с циклами."""
+        code, out, _ = launch("configs/test_cycle.csv")
+        self.assertEqual(code, 0)
+        self.assertIn("C -> A, D\n", out)
+        self.assertIn("cycle: A -> B -> C -> A", out)
 
     def test_error(self) -> None:
         """Ошибка настроек даёт код 1 и сообщение в потоке ошибок."""
