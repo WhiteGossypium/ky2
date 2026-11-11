@@ -21,12 +21,11 @@ def launch(*arguments: str):
 class MainTest(unittest.TestCase):
     """Проверяет вывод параметров и коды завершения."""
 
-    def test_prints_pairs(self) -> None:
-        """Параметры печатаются в формате ключ=значение."""
-        code, out, _ = launch("configs/express_filter.csv")
-        self.assertEqual(code, 0)
-        self.assertIn("package=express\n", out)
-        self.assertIn("filter=mime\n", out)
+    def test_test_mode_not_ready(self) -> None:
+        """Тестовый репозиторий на этом этапе ещё не поддержан."""
+        code, _, err = launch("configs/test_simple.csv")
+        self.assertEqual(code, 1)
+        self.assertIn("not supported yet", err)
 
     def test_error(self) -> None:
         """Ошибка настроек даёт код 1 и сообщение в потоке ошибок."""

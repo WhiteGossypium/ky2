@@ -1,0 +1,6 @@
+parameter,value
+package,no-such-package-zq-1
+repository,https://registry.npmjs.org
+test_mode,false
+version,1.0.0
+filter,

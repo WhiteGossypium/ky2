@@ -4,14 +4,30 @@
 Готовые менеджеры пакетов и библиотеки для получения зависимостей
 не используются: только стандартная библиотека Python.
 
-Текущее состояние: **этап 1** — минимальный прототип с конфигурацией.
+Текущее состояние: **этап 2** — сбор данных о прямых зависимостях.
 
 ## 1. Общее описание
 
 Все параметры пользователь задаёт в конфигурационном файле формата CSV.
-Программа читает файл, проверяет каждый параметр и печатает их
-в формате `ключ=значение`. При ошибке программа печатает сообщение
-`error: ...` и завершается с кодом 1.
+Программа читает файл, проверяет каждый параметр, скачивает из реестра
+npm описание заданной версии пакета и печатает его прямые зависимости.
+При ошибке программа печатает сообщение `error: ...` и завершается
+с кодом 1.
+
+### Откуда берутся данные
+
+Реестр npm отдаёт по адресу `<repository>/<имя пакета>` документ JSON
+со всеми версиями пакета. Программа запрашивает сокращённый документ
+(заголовок `Accept: application/vnd.npm.install-v1+json`), находит в нём
+заданную версию и читает поле `dependencies`: имя зависимости и диапазон
+допустимых версий, например `accepts ~1.3.8`. В имени с областью
+(`@types/node`) косая черта кодируется: `@types%2Fnode`. Скачивание —
+стандартный модуль `urllib`, разбор — стандартный модуль `json`.
+
+Поле `devDependencies` (нужно только разработчикам пакета) не читается.
+Необязательные зависимости npm при публикации сам добавляет
+в `dependencies`, поэтому они тоже видны.
+
 
 ## 2. Настройки
 
@@ -44,11 +60,16 @@ filter,
 
 | Модуль | Функция | Назначение |
 |---|---|---|
-| `src/main.py` | `run` | читает настройки и печатает их |
+| `src/main.py` | `run` | читает настройки и печатает прямые зависимости |
+| | `direct_report` | строки отчёта о прямых зависимостях |
 | `src/settings.py` | `read_rows` | читает строки CSV, выбирает разделитель |
 | | `check_header`, `collect_values`, `check_complete` | проверяют структуру файла |
 | | `check_package`, `check_repository`, `check_test_mode`, `check_version`, `check_filter` | проверяют по одному параметру |
 | | `load_settings` | возвращает объект `Settings` с проверенными значениями |
+| `src/npm_registry.py` | `package_url` | строит адрес документа пакета |
+| | `read_url`, `download_document` | скачивают и проверяют документ JSON |
+| | `NpmRegistry.manifest` | описание заданной версии; документ скачивается один раз |
+| | `NpmRegistry.direct_dependencies` | прямые зависимости: пары имя и диапазон |
 | `src/errors.py` | `ToolError` | ошибка, которую видит пользователь |
 
 ## 4. Сборка, запуск и тесты
@@ -60,20 +81,25 @@ filter,
 | Запуск с `config.csv` | `run.bat` |
 | Запуск с другим файлом | `run.bat configs\chalk.csv` |
 | Тесты | `test.bat` |
-| Все примеры этапа | `examples\demo_settings.bat` |
+| Ошибки настроек | `examples\demo_settings.bat` |
+| Прямые зависимости (нужен интернет) | `examples\demo_settings.bat` |
 
 ## 5. Примеры использования
 
 ```text
-> run.bat configs\express_filter.csv
-package=express
-repository=https://registry.npmjs.org
-test_mode=false
-version=4.18.2
-filter=mime
+> run.bat configs\chalk.csv
+package: chalk@4.1.2
+direct dependencies: 2
+  ansi-styles ^4.1.0
+  supports-color ^7.1.0
+
+> run.bat configs\network_errors\no_such_version.csv
+error: express has no version 99.0.0 (latest is 5.3.0)
 
 > run.bat configs\errors\version_invalid.csv
 error: version: '4.18' is not a version like 1.2.3
 ```
 
-В папке `configs/errors` лежит по файлу на каждую ошибку.
+В папке `configs/errors` лежит по файлу на каждую ошибку настроек,
+в `configs/network_errors` — ошибки реестра: нет пакета, нет версии,
+нет связи.
